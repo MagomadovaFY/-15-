@@ -1,1 +1,54 @@
-# -15-
+# Практическая работа №1: Продвинутые возможности PostgreSQL
+
+**Выполнила:** Магомадова Фирюза Юсуповна  
+**Группа:** ЦИБ-241  
+**Дата:** 04/06/2026  
+**Инструмент:** Yandex DataLens + PostgreSQL 
+
+---
+
+## Выбранные задания
+
+| № | Блок | Тема | Задание |
+|---|------|------|---------|
+| 1 | **А** | Анализ времени и дат | Дни недели продаж |
+| 2 | **Б** | Геопространственный анализ | Ближайший дилер для клиентов из NY |
+| 3 | **В** | Сложные типы (JSONB) | Поиск по атрибутам в JSONB |
+
+---
+
+## Цель работы
+
+Научиться применять продвинутые возможности PostgreSQL для анализа данных:
+- Анализ временных рядов с `DATE_TRUNC`, `EXTRACT`
+- Геопространственный анализ с расчетом расстояний
+- Работа с JSONB структурами и поиск по атрибутам
+- Визуализация результатов в Yandex DataLens
+
+---
+
+## Задание 1. Дни недели продаж (Блок А)
+
+### Условие
+
+Определить, в какой день недели (понедельник, вторник и т.д.) совершается наибольшее количество продаж. Вывести день недели, количество транзакций и общую сумму продаж.
+
+### SQL-код
+
+```sql
+SELECT 
+    CASE EXTRACT(DOW FROM sales_transaction_date)
+        WHEN 0 THEN 'Sunday'
+        WHEN 1 THEN 'Monday'
+        WHEN 2 THEN 'Tuesday'
+        WHEN 3 THEN 'Wednesday'
+        WHEN 4 THEN 'Thursday'
+        WHEN 5 THEN 'Friday'
+        WHEN 6 THEN 'Saturday'
+    END AS day_of_week,
+    COUNT(*) AS number_of_sales,
+    ROUND(SUM(sales_amount)::numeric, 2) AS total_sales_amount
+FROM sales
+GROUP BY EXTRACT(DOW FROM sales_transaction_date)
+ORDER BY number_of_sales DESC;
+
