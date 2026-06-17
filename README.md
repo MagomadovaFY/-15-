@@ -52,7 +52,51 @@ FROM sales
 GROUP BY EXTRACT(DOW FROM sales_transaction_date)
 ORDER BY number_of_sales DESC;
 ```
-***(скрины прикреплены и подписаны)***
+***(скрины успешного выполнения прикреплены и подписаны)***
 
 ### Вывод
 Наибольшее количество продаж совершается в Friday (пятницу) — 3 транзакции. Общая сумма продаж в этот день составляет 85 000.00. Это может быть связано с тем, что покупатели чаще совершают крупные покупки перед выходными.
+
+---
+## Задание 2. Ближайший дилер для клиентов из NY (Блок Б)
+### 📌 Условие
+Для каждого клиента из штата NY (state = 'NY') найти ближайший дилерский центр и расстояние до него в милях.
+
+***Примечание: Расстояние рассчитано по формуле Гаверсина (Haversine), так как расширение earthdistance было недоступно на учебном сервере.***
+
+### SQL-код
+```
+sql
+WITH distances AS (
+    SELECT 
+        c.customer_id,
+        CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
+        CONCAT(d.city, ', ', d.state) AS dealership_name,
+        3959 * ACOS(
+            COS(RADIANS(c.latitude)) * COS(RADIANS(d.latitude)) *
+            COS(RADIANS(d.longitude) - RADIANS(c.longitude)) +
+            SIN(RADIANS(c.latitude)) * SIN(RADIANS(d.latitude))
+        ) AS distance_miles,
+        ROW_NUMBER() OVER (
+            PARTITION BY c.customer_id 
+            ORDER BY 3959 * ACOS(
+                COS(RADIANS(c.latitude)) * COS(RADIANS(d.latitude)) *
+                COS(RADIANS(d.longitude) - RADIANS(c.longitude)) +
+                SIN(RADIANS(c.latitude)) * SIN(RADIANS(d.latitude))
+            )
+        ) AS rn
+    FROM 
+        customers c 
+    CROSS JOIN 
+        dealerships d
+    WHERE 
+        c.state = 'NY'
+)
+SELECT 
+    customer_id,
+    customer_name,
+    dealership_name,
+    ROUND(distance_miles::numeric, 2) AS distance_miles
+FROM distances
+WHERE rn = 1
+ORDER BY distance_miles;
